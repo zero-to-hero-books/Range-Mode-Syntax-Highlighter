@@ -9,7 +9,7 @@ textarea{width:80%; height:6em; margin-left:20px;display:block;}
 #radioForm label{white-space: nowrap;}
 label input[type="radio"]:checked+span.btn{background-color:#A9D0F0;} 
 label input[type="radio"]{display:none;}
-
+p, ul, ol{line-height:150%;}
 .readOnly{background: #eee;}
 form{margin:0.5em 0 0.5em 0;}
 h1{font-size:1.3em;}
