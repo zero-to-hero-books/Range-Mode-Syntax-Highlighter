@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integration test - Symbolizer</title>
+<link rel="stylesheet" href="../rmsh.css">
+<script src="../RangeModeSyntaxHighlighter.js"></script>
+<script src="./testShared.js"></script>
+</head>
+<body>
+<h1><a href="../index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<ul id="testUL"></ul>
+
+<div class="testFlexbox">
+  <div class="col">
+    <h2>Tokenizer + Symbolizer integration tests</h2>
+   <form name="radioForm" id="radioForm">
+		<label><input type="radio" name="radioTest" value="edit" checked><span class="btn">Edit test</span></label>
+		<label><input type="radio" name="radioTest" value="sql" ><span class="btn">SQL</span></label>
+		<label><input type="radio" name="radioTest" value="javascript" ><span class="btn">javascript</span></label>
+		<label><input type="radio" name="radioTest" value="xml" ><span class="btn">XML</span></label>
+	</form>
+
+    <form id="testForm">
+	<label>Case sensitive: <input type="checkbox" class="arg" data-arg="4"></label>
+	<label>Delimiters: <input type="text" class="arg" data-arg="2"></label>
+	<br><label>String to symbolize: <textarea class="arg" data-arg="1"></textarea></label>
+	<br><label>Symbols to match, space delimited: <textarea class="arg" data-arg="3"></textarea></label>
+	<br><label>Test code: <textarea id="code"></textarea>
+	'Symbolizer' is automatically created. 'logOutput' function can be used to log output.
+	</label>
+	</form>
+	<button type="button" onclick="Test.run()" class="btn">Run test code</button>
+  </div>
+  <div class="splitter"></div>        
+  <div class="col" id="output">
+    
+  </div>
+  
+</div>
+<script>
+addContents('Tokenizer + Symbolizer');
+radioForm.elements.radioTest.forEach(function(element){
+	element.addEventListener('change', radioChange);
+	if(element.checked==true) radioChange.call(element);
+});
+
+function radioChange() {
+	var testCode="var symbol;\ndo{\n   symbol=Symbolizer.getNextSymbol();\n   if(symbol!=null){"+
+				"\n      logOutput(symbol);\n   }\n} while(symbol!=null);"
+	switch(this.value){
+		case 'sql': Test.load([sqlStr, sqlDelimiters, "select from where", false], testCode,
+				sqlSymbolsExpected);
+			break;
+		case 'javascript': Test.load([jsStr, jsDelimiters, "function return null // /*", true], testCode,
+				jsSymbolsExpected);
+			break;
+		case 'xml': Test.load([xmlStr, xmlDelimiters, "<? \" ?> < </ >", true], testCode,
+				xmlSymbolsExpected);
+			break;
+		
+		case 'edit': Test.edit();
+			break;
+	}
+}
+
+function createObj(args){
+	window.Tokenizer=RMSHTokenizer(args[0],args[1]);
+	var symbols=" ";
+	if(args[3]==false) symbols+=args[2].toUpperCase();
+	else symbols+=args[2];
+	symbols+=" ";
+	window.Symbolizer=RMSHSymbolizer(Tokenizer, symbols, args[3])
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit test - Tokenizer</title>
+<link rel="stylesheet" href="../rmsh.css">
+<script src="../RangeModeSyntaxHighlighter.js"></script>
+<script src="./testShared.js"></script>
+</head>
+<body>
+<h1><a href="../index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<ul id="testUL"></ul>
+
+<div class="testFlexbox">
+  <div class="col">
+    <h2>Tokenizer unit tests</h2>
+    <form name="radioForm" id="radioForm">
+		<label><input type="radio" name="radioTest" value="edit" checked><span class="btn">Edit test</span></label>
+		<label><input type="radio" name="radioTest" value="sql" ><span class="btn">SQL</span></label>
+		<label><input type="radio" name="radioTest" value="javascript" ><span class="btn">javascript</span></label>
+		<label><input type="radio" name="radioTest" value="xml" ><span class="btn">XML</span></label>
+		<label><input type="radio" name="radioTest" value="lookahead" ><span class="btn">lookAhead</span></label>
+		<label><input type="radio" name="radioTest" value="popedcnt" ><span class="btn">popedCharsCnt</span></label>
+		<label><input type="radio" name="radioTest" value="setdelimiters" ><span class="btn">setDelimiters</span></label>
+	</form>
+
+    <form id="testForm">
+	<label>Delimiters: <input type="text" class="arg" data-arg="2"></label>
+	<br><label>String to tokenize: <textarea class="arg" data-arg="1"></textarea></label>
+	<br><label>Test code: <textarea id="code"></textarea>
+	'Tokenizer' is automatically created. 'logOutput' function can be used to log output.
+	</label>
+	</form>
+	<button type="button" onclick="Test.run()" class="btn">Run test code</button>
+  </div>
+  <div class="splitter"></div>        
+  <div class="col" id="output">
+    
+  </div>
+  
+</div>
+<script>
+addContents('Tokenizer');
+radioForm.elements.radioTest.forEach(function(element){
+	element.addEventListener('change', radioChange);
+	if(element.checked==true) radioChange.call(element);
+});
+
+function radioChange() {
+	switch(this.value){
+		case 'sql': Test.load([sqlStr, sqlDelimiters],
+				"var token;\ndo{\n   token=Tokenizer.popToken();\n   if(token!=null){"+
+				"\n      logOutput(token);\n   }\n} while(token!=null);",
+				sqlExpected);
+			break;
+		case 'javascript': Test.load([jsStr, jsDelimiters],
+				"var token;\ndo{\n   token=Tokenizer.popToken();\n   if(token!=null){"+
+				"\n      logOutput(token);\n   }\n} while(token!=null);",
+				jsExpected);
+			break;
+		case 'xml': Test.load([xmlStr, xmlDelimiters],
+				"var token;\ndo{\n   token=Tokenizer.popToken();\n   if(token!=null){"+
+				"\n      logOutput(token);\n   }\n} while(token!=null);",
+				xmlExpected);
+			break;
+		case 'lookahead': Test.load([xmlStr, xmlDelimiters],
+				"logOutput(Tokenizer.lookAhead(1));\n"+
+				"logOutput(Tokenizer.lookAhead(2));\n"+
+				"logOutput(Tokenizer.lookAhead(3));\n"+
+				"logOutput(Tokenizer.popToken());\n"+
+				"logOutput(Tokenizer.lookAhead(1));\n"+
+				"logOutput(Tokenizer.lookAhead(2));\n"+
+				"logOutput(Tokenizer.lookAhead(3));\n",
+				["<", "?", "xml", "<", "?", "xml", " "]);
+			break;
+		case 'popedcnt': Test.load([xmlStr, xmlDelimiters],
+				"var token;\ndo{\n   token=Tokenizer.popToken();\n"+
+				"   logOutput(Tokenizer.popedCharsCnt());\n} while(token!=null);",
+				[1, 2, 5, 6, 14, 15, 18, 19, 20, 29, 30, 33, 34, 35, 36, 37,
+				38, 39, 40, 44, 45, 49, 50, 51, 55, 56, 56]);
+			break;
+		case 'setdelimiters': Test.load([sqlStr, sqlDelimiters],
+				"logOutput(Tokenizer.lookAhead(1));\n"+
+				"logOutput(Tokenizer.lookAhead(2));\n"+
+				"logOutput(Tokenizer.lookAhead(3));\n"+
+				"Tokenizer.setDelimiters('');\n"+
+				"logOutput(Tokenizer.lookAhead(1));\n"+
+				"logOutput(Tokenizer.lookAhead(2));\n"+
+				"logOutput(Tokenizer.lookAhead(3));\n",
+				["SELECT", " ", "isbn", "SELECT", " ", "isbn,price"]);
+			break;
+		case 'edit': Test.edit();
+			break;
+	}
+}
+
+function createObj(args){
+	window.Tokenizer=RMSHTokenizer(args[0],args[1]);
+}
+</script>
+</body>
+</html>
