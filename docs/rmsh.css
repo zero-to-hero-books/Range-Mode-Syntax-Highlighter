@@ -1,0 +1,39 @@
+.testFlexbox{display: flex; margin-left: 20em;}
+.testFlexbox .col{flex:0.6; padding: 1em; overflow-y: auto; overflow-x: hide;}
+#output{flex:0.4;}
+.splitter{width: 5px; border: 1px dotted;}
+#testForm input[type=text]{width:20em; display:block; margin-left:20px;}
+textarea{width:80%; height:6em; margin-left:20px;display:block;}
+#testForm label{display:block;}
+#code{height:10em;}
+#radioForm label{white-space: nowrap;}
+label input[type="radio"]:checked+span.btn{background-color:#A9D0F0;} 
+label input[type="radio"]{display:none;}
+
+.readOnly{background: #eee;}
+form{margin:0.5em 0 0.5em 0;}
+h1{font-size:1.3em;}
+pre code{display:table; border:1px solid #ccc; border-radius:3px; padding:1em;}
+h2{font-size:1.1em;display: inline-block; margin:0; border:1px solid #345578; padding:0.3em 3em 0.3em 3em; border-radius:3px; box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.176);}
+.sel{background:#A9D0F0;}
+.pad{padding-left:1.5em;}
+#testUL{z-index:998;overflow:hidden;position:fixed; top:2.5em; left:0; bottom:0; margin:0; max-width:19.5em; padding: 1em; margin: 0; list-style-type:none;}
+#testULindex{list-style-type:none;}
+#testUL a, #testULindex a, h1 a{text-decoration: none;}
+@media screen and (max-width: 1000px) {
+  #testUL{position: relative; margin:1em; top:0;}
+  .testFlexbox{margin:1em;}
+}
+
+.btn{display:inline-block; margin:3px 0; border: 1px solid; padding:0.5em; border-radius:3px; cursor:default;
+		border-color: rgba(52, 85, 120, 0.3) rgba(52, 85, 120, 0.3) rgba(52, 85, 120, 0.5) rgba(52, 85, 120, 0.5); 
+		background-color: #F6F6F6;
+		box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.2) inset, 0px 1px 2px rgba(0, 0, 0, 0.05);
+	}
+	.btn.active{background-color:#A9D0F0;}
+	.btn:hover{background-color:#B9E0F5;}
+	
+	.btn.disabled, .btn.disabled:hover{background-color: #E3E3E3 !important; color:#666!important;}
+	.btn img{width: 1em;height: 1em;}
+	.disabled img {filter: gray; -webkit-filter: grayscale(1); filter: grayscale(1);}
+

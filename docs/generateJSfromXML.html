@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wrap XML in JS - RangeModeSyntaxHighlighter.js</title>
+<link rel="stylesheet" href="./rmsh.css">
+<script src="./download.js"></script>
+<style>
+	#dropZone{max-width: 40em; text-align: center; margin:0 auto; border:1px dashed #3A3; min-height:8em; padding-top:3em;}
+</style>
+</head>
+<body>
+<h1><a href="./index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<div id='dropZone'>Drag-and-drop an XML syntax definition file here to open and generate JS wrapper file.</div>
+<pre id="error"></pre>
+
+<script>
+var id=document.getElementById.bind(document);
+id('dropZone').addEventListener('dragover', hDragOver, false);
+id('dropZone').addEventListener('drop', hFileSelect, false);
+id('dropZone').addEventListener('dragleave', hDragExit, false);
+function hFileSelect(evt) {
+	evt.stopPropagation();
+	evt.preventDefault();
+	files = evt.dataTransfer.files;
+	if(files){
+		var reader = new FileReader();  
+		reader.onload = function(event){
+			var XMLstr=event.target.result;
+			var nameAndDocument=XMLvalidate(XMLstr);
+			if(nameAndDocument!=null){
+				var xmlserial= new XMLSerializer();
+				var jsonStr=JSON.stringify(xmlserial.serializeToString(nameAndDocument.document));
+				jsonStr='RMSH.addSyntaxXML("'+ nameAndDocument.name +'", ' + jsonStr + ');';
+				var blob = new Blob([jsonStr], {type: "text/javascript;charset=utf-8"});
+				download(blob, files[0].name + '.js', "text/javascript;charset=utf-8");
+				id('dropZone').style.borderWidth= '1px';
+			}
+		};
+		reader.readAsText(files[0],"UTF-8");
+		
+	}
+}
+function hDragOver(evt) {
+	evt.stopPropagation();
+	evt.preventDefault();
+	evt.dataTransfer.dropEffect = 'copy'; 
+	id('dropZone').style.borderWidth= '2px';
+}
+function hDragExit(evt) {id('dropZone').style.borderWidth= '1px';}
+
+function XMLvalidate(XMLstr){
+	id('error').innerHTML="";
+	var domparser=new DOMParser();
+	var doc = domparser.parseFromString(XMLstr, "application/xml");
+	if(doc.documentElement.nodeName=='parsererror'){
+		logErr(doc.documentElement.textContent); 
+		return null;
+	}
+	//first remove whitespace between nodes
+	removeWhitespaceNodes(doc.childNodes[0]);
+	if(doc.documentElement.nodeName!='syntaxDefinition'){
+		 logErr('Root element must be "syntaxDefinition"\n Found: '+ doc.documentElement.nodeName); 
+		 return null;
+	 }
+	 
+	//we need one delimiters and the rest can only be ranges
+	for (let i = 0; i < doc.documentElement.childNodes.length; i++){
+		let node=doc.documentElement.childNodes[i];
+		if(node.nodeName=='range'){
+			removeWhitespaceNodes(node);
+			for (let t = 0; t < node.childNodes.length; t++){
+				let innerNode=node.childNodes[t]
+				if(innerNode.nodeName!='symbols'){
+					removeWhitespaceNodes(innerNode);
+					for(let k = 0; k < innerNode.childNodes.length; k++)
+						normalizeTextContent(innerNode.childNodes[k]);
+				}
+				else normalizeTextContent(innerNode);
+			}
+			
+		}
+	}
+
+	return {name: doc.documentElement.attributes['name'].nodeValue, document: doc};
+}
+
+function normalizeTextContent(node){
+	var tempStr=node.textContent;
+	tempStr = tempStr.replace(/[\r\n\t]+/g, ' ');
+	tempStr = tempStr.replace(/  +/g, ' ');
+	node.textContent=tempStr.trim();
+}
+
+function removeWhitespaceNodes(parent){
+	for (let i = 0; i < parent.childNodes.length; i++){
+		switch(parent.childNodes[i].nodeType){
+			case Node.COMMENT_NODE:
+			case Node.TEXT_NODE:
+			case Node.PROCESSING_INSTRUCTION_NODE:
+			case Node.CDATA_SECTION_NODE:
+				parent.removeChild(parent.childNodes[i]);
+				break;
+		}
+	}
+}
+
+function logErr(err){
+	id('error').textContent=err;
+}
+</script>
+</body>
+</html>
