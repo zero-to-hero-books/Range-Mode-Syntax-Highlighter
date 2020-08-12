@@ -3,6 +3,6 @@ For example, for javascript:
 
 <html>
 <head>
-<script src="http://your-website.com/RangeModeSyntaxHighlighter-min.js"></script>
-<script src="http://your-website.com/javascript.xml.js"></script>
+<script src="./path-to-scripts/RangeModeSyntaxHighlighter-min.js"></script>
+<script src="./path-to-scripts/your-website.com/javascript.xml.js"></script>
 </head>
