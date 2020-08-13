@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML syntax - Range Mode Syntax Highlighter (RMSH)</title>
+<link rel="stylesheet" href="./rmsh.css">
+<script src="./RangeModeSyntaxHighlighter-min.js"></script>
+<script src="./xml.xml.js"></script>
+<style>
+p b{font-family:monospace; font-size:1.1em; color:#bd0d0d;}
+p i, li i{font-family:monospace; font-size:1.1em; color:#0000ff;}
+</style>
+</head>
+<body>
+<h1><a href="./index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<h1>XML syntax file specification</h1>
+<h2>Root element</h2>
+<p>The root element of RMSH XML syntax file is the <b>syntaxDefinition</b> tag.
+It must have three attributes:</p>
+<ul>
+<li><i>name</i>: Name of the language.</li>
+<li><i>extensions</i>: A space separated list of file extensions.</li>
+<li><i>caseSensitive</i>: Whether or not the language is case sensitive. Either true or false.</li>
+</ul>
+<p>For example, for javascript the root element would be:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;syntaxDefinition name="javascript" extensions="js" caseSensitive="true"&gt;
+
+&lt;/syntaxDefinition&gt;
+</code></pre>
+<h2>Tokenizer delimiters</h2>
+<p>RMSH processes text in two stages: 'tokenization' and 'symbolization.' The tokenizer returns a series a tokens based on the 
+delimiters specified in the language syntax. (Space type characters are always considered delimiters, e.g. space, tab, new line.) 
+The root element must have a <b>delimiters</b> element which specifies the single character delimiters to 
+be used by the tokenizer. For javascript the XML would be:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;syntaxDefinition name="javascript" extensions="js" caseSensitive="true"&gt;
+
+&lt;delimiters&gt;+-/%*|^?:&amp;amp;!=&amp;lt;&amp;gt;"'\{}[]()~`;$.&lt;/delimiters&gt;
+
+&lt;/syntaxDefinition&gt;
+</code></pre>
+<h2>Default parsing range</h2>
+<p>The root element must also have at least one range, the default range, which is marked with the <i>default</i> attribute.
+<b>delimiters</b> and <b>range</b> are the only two types of elements allowed in a <b>syntaxDefinition</b>. 
+All range elements must have a unique <i>id</i> attribute. Continuing with our javascript example:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;syntaxDefinition name="javascript" extensions="js" caseSensitive="true"&gt;
+&lt;delimiters&gt;+-/%*|^?:&amp;amp;!=&amp;lt;&amp;gt;"'\{}[]()~`;$.&lt;/delimiters&gt;
+
+&lt;range id="defaultJS" default="true"&gt;&lt;/range&gt;
+
+&lt;/syntaxDefinition&gt;
+</code></pre>
+
+<p>Normally, a syntax highlighter would highlight tokens that are keywords. However, RMSH takes a different approach.
+It works on the level of symbols and highlights symbols instead of keywords. 
+A symbol is either a token or a combination of tokens. For example, in C++ <b>-</b> and <b>&gt;</b>
+ are operators, but their combination <b>-&gt;</b> is a different operator. 
+Moreover, inside a string literal neither <b>-</b>, <b>&gt;</b> or their combination is meaningful.
+Inside string literals <b>\'</b> and <b>\"</b> are symbols, as well as <b>\\</b>.
+Symbols are defined within ranges of text, and each range is a standalone parsing context,
+independent of any outer ranges. There is no 'inheritance' or CSS like 'cascade.'</p>
+<p>Symbols can be specified with the <b>symbols</b> tag, which may have color/italic/bold styling information as attributes:</p>
+<ul>
+<li><i>color</i>: The hex color value, e.g. #0000ff</li>
+<li><i>italic</i>: Either true or false.</li>
+<li><i>bold</i>: Either true or false.</li>
+</ul>
+<p>Continuing with the javascript example, keywords could be specified in the default range as follows:</p>
+<pre><code>&lt;range id="defaultJS" default="true"&gt;
+&lt;symbols color="#0000ff">export import as break case catch const continue default <i>etc...</i>&lt;/symbols&gt;
+&lt;symbols color="#551a8b" italic="true"&gt;false Infinity NaN null true undefined&lt;/symbols&gt;
+&lt;symbols color="#551a8b" bold="true"&gt;super constructor&lt;/symbols&gt;
+&lt;/range&gt;
+</code></pre>
+<p>Each <b>symbols</b> tag contains a space separated list of symbols/keywords, and the styling information for those symbols. 
+A range can contain three types of elements: <b>symbols</b> for specifying symbols/keywords and optionally their style,
+ <b>fold</b> for specifying folding and <b>embed</b> for embedding other 
+ranges (including syntax definitions) that are valid inside the range.</p>
+<h2>Folding</h2>
+<p>Folding within a range can be specified using the <b>fold</b> tag, which must contain exactly one <b>begin</b> and at 
+least one <b>end</b> tag. <b>begin</b> and <b>end</b> are automatically considered symbols in the range, 
+but there is no styling information allowed for either <b>fold</b>, <b>begin</b> or <b>end</b> tags.
+ Styles for symbols within a range always have to be defined using a <b>symbols</b> tag. All <b>fold</b> tags must 
+ have a unique <i>id</i> attribute. For javascript the default range with folding is as follows:</p>
+<pre><code>&lt;range id="defaultJS" default="true"&gt;
+&lt;symbols color="#0000ff">export import as break case catch const continue default <i>etc...</i>&lt;/symbols&gt;
+&lt;symbols color="#551a8b" italic="true"&gt;false Infinity NaN null true undefined&lt;/symbols&gt;
+&lt;symbols color="#551a8b" bold="true"&gt;super constructor&lt;/symbols&gt;
+
+&lt;fold id="braces"&gt;
+   &lt;begin&gt;{&lt;/begin&gt;
+   &lt;end&gt;}&lt;/end&gt;
+&lt;/fold&gt;
+
+&lt;/range&gt;
+</code></pre>
+
+
+<h2>Embedded ranges</h2>
+<p>Additional ranges may be defined and embedded into the default range using the <b>embed</b> tag.
+Continuing the javascript example, we will now add ranges for 
+ comments and single line comments. Default styles (color/italic/bold) for a <b>range</b> tag may be specified exactly
+ as with the <b>symbols</b> tag. 
+As with the <b>fold</b> tag, in an embedded range symbols in <b>begin</b> and <b>end</b> are automatically considered symbols in the range, 
+but there is no styling information allowed. Hence, we need to add styling for <b>/*</b>, <b>*/</b> and <b>//</b>
+ separately using the <b>symbols</b> tag. Embedded ranges may be marked as foldable using the <i>fold</i> attribute:</p>
+
+<pre><code>&lt;range id="defaultJS" default="true"&gt;
+&lt;symbols color="#0000ff">export import as break case catch const continue default <i>etc...</i>&lt;/symbols&gt;
+&lt;symbols color="#551a8b" italic="true"&gt;false Infinity NaN null true undefined&lt;/symbols&gt;
+&lt;symbols color="#551a8b" bold="true"&gt;super constructor&lt;/symbols&gt;
+
+&lt;symbols color="#446611"&gt;/* */ //&lt;/symbols&gt;
+
+&lt;embed range="comment" fold="true"&gt;
+   &lt;begin&gt;/*&lt;/begin&gt;
+   &lt;end&gt;*/&lt;/end&gt;
+&lt;/embed&gt;
+		
+&lt;embed range="singleLineComment"&gt;
+   &lt;begin&gt;//&lt;/begin&gt;
+   &lt;end value="EOL" /&gt;
+&lt;/embed&gt;
+
+&lt;/range&gt;
+
+&lt;range id="comment" color="#446611" /&gt;
+&lt;range id="singleLineComment" color="#446611" /&gt;
+</code></pre>
+<p>Note that the <b>end</b> tag for the single line comment includes the EOL value. This is the only value that is recognized
+and only for the <b>end</b> tag. Next we will embed ranges for single quoted, double quoted and template string literals.
+Folding and comment ranges are omitted to simplify the code. As before, the start and end symbols for an embedded range 
+need to be styled using the <b>symbols</b> tag:</p>
+<pre><code>&lt;range id="defaultJS" default="true"&gt;
+&lt;symbols color="#0000ff">export import as break case catch const continue default <i>etc...</i>&lt;/symbols&gt;
+&lt;symbols color="#551a8b" italic="true"&gt;false Infinity NaN null true undefined&lt;/symbols&gt;
+&lt;symbols color="#551a8b" bold="true"&gt;super constructor&lt;/symbols&gt;
+
+&lt;symbols color="#bd0d0d"&gt;" ' `&lt;/symbols&gt;
+
+&lt;embed range="quoteDouble"&gt;
+   &lt;begin&gt;"&lt;/begin&gt;
+   &lt;end&gt;"&lt;/end&gt;
+   &lt;end value="EOL" /&gt;
+&lt;/embed&gt;
+
+&lt;embed range="quoteSingle"&gt;
+   &lt;begin&gt;'&lt;/begin&gt;
+   &lt;end&gt;'&lt;/end&gt;
+   &lt;end value="EOL" /&gt;
+&lt;/embed&gt;
+
+&lt;embed range="quoteBacktick"&gt;
+   &lt;begin&gt;`&lt;/begin&gt;
+   &lt;end&gt;`&lt;/end&gt;
+&lt;/embed&gt;
+
+&lt;/range&gt;
+
+&lt;range id="quoteDouble" color="#bd0d0d"&gt;
+   &lt;symbols&gt;\" \\&lt;/symbols&gt;
+&lt;/range&gt;
+
+&lt;range id="quoteSingle" color="#bd0d0d"&gt;
+   &lt;symbols&gt;\' \\&lt;/symbols&gt;
+&lt;/range&gt;
+
+&lt;range id="quoteBacktick" color="#bd0d0d"&gt;
+   &lt;symbols&gt;\` \\&lt;/symbols&gt;
+   
+   &lt;embed range="defaultJS"&gt;
+      &lt;begin&gt;${&lt;/begin&gt;
+      &lt;end&gt;}&lt;/end&gt;
+   &lt;/embed&gt;
+&lt;/range&gt;
+</code></pre>
+
+<p>Note that for double and single quoted string literals there are multiple <b>end</b> tags, and their ranges include
+<b>symbols</b> tags for escape sequences. Also note that the template string literal range embeds the default range for the
+syntax definition.</p>
+
+<h2>Embedded syntax definitions</h2>
+<p>In general, syntax definition XML files should be standalone. However, some languages (such as HTML) can embed other languages.
+In such cases a syntax definition may be embedded in a range using the <b>embed</b> tag:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;syntaxDefinition name="html" extensions="htm html xhtml" caseSensitive="true"&gt;
+&lt;delimiters&gt;"'&amp;lt;&amp;gt;[]!-?/=&lt;/delimiters&gt;
+
+&lt;range id="defaultHTML" default="true"&gt;
+   &lt;embed syntaxDefinition="javascript" fold="true"&gt;
+      &lt;begin&gt;&amp;lt;script&amp;gt;&lt;/begin&gt;
+      &lt;end&gt;&amp;lt;/script&amp;gt;&lt;/end&gt;
+   &lt;/embed&gt;
+&lt;/range&gt;
+
+&lt;/syntaxDefinition&gt;
+</code></pre>
+<script>
+	var i;
+	var el=document.querySelectorAll('pre code');
+	for(i=0; i<el.length; i++) RMSH.highlight(el[i], 'xml');
+</script>
+</body>
+</html>

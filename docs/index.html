@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Range Mode Syntax Highlighter (RMSH)</title>
+<link rel="stylesheet" href="./rmsh.css">
+<script src="./RangeModeSyntaxHighlighter-min.js"></script>
+<script src="./html.xml.js"></script>
+<script src="./javascript.xml.js"></script>
+<style>
+ul li i{font-family:monospace; font-size:1.1em; color:#0000ff;}
+</style>
+</head>
+<body>
+<h1>Range Mode Syntax Highlighter (RMSH)</h1>
+
+<h2>Description</h2>
+<p>RangeModeSyntaxHighlighter.js is a code highlighter with code folding and line numbers for code in
+&lt;pre&gt; or &lt;pre&gt;&lt;code&gt; on webpages. The project consists of two parts:</p>
+<ol>
+	<li>An <b>XML specification</b> for defining syntax highlighting and folding for programming, scripting and markup languages.
+	<p>The XML specification was inspired by the langs.xml of Notepad++ and AvalonEdit's XSHD specification for syntax highlighting. 
+	RMSH XML files are meant to be easy to write and easy to implement. While seemingly minimalistic, the XML definition should allow for
+defining syntax highlighting rules and folding for any language.
+<br><a href="./RMSH-xml-syntax.html">XML specification and guide</a></p></li>
+	<li>A <b>javascript implementation</b> for highlighting code inside &lt;pre&gt; or &lt;pre&gt;&lt;code&gt; on webpages.
+	<p>RangeModeSyntaxHighlighter.js is accurate and fast. <!--It does not use regular expressions and does not "fail on certain edge cases"
+	as prism.js does (see <a href="https://prismjs.com/known-failures.html">https://prismjs.com/known-failures.html</a>.)--> 
+	It is optimized for speed: Wherever possible string functions on string primitives are used, even for keyword/style lookups.
+	RangeModeSyntaxHighlighter.js uses XML syntax definition files that are wrapped in javascript so that they can be loaded with a
+	&lt;script&gt; tag as needed.
+	<br><a href="./generateJSfromXML.html">Generate JS from XML</a></p></li>
+</ol>
+<h2>Usage</h2>
+<p>Include the RangeModeSyntaxHighlighter.js in the &lt;head&gt; of your page and any syntax definition javascript files afterwards. 
+Files can be downloaded from Github:<br><a href="https://github.com/zero-to-hero-books/Range-Mode-Syntax-Highlighter">Github project: RangeModeSyntaxHighlighter.js</a>
+<br><a href="https://github.com/zero-to-hero-books/Range-Mode-Syntax-Highlighter/tree/master/XML-syntax-definitions">Syntax definition XML files on Github</a>
+<br><a href="https://github.com/zero-to-hero-books/Range-Mode-Syntax-Highlighter/tree/master/JS-syntax-wrappers">Javascript wrapper files needed for RangeModeSyntaxHighlighter.js</a>
+</p>
+<p>For example, for javascript:</p>
+<pre><code class="html">&lt;html&gt;
+&lt;head&gt;
+&lt;script src="http://your-website.com/RangeModeSyntaxHighlighter-min.js"&gt;&lt;/script&gt;
+&lt;script src="http://your-website.com/javascript.xml.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+</code></pre>
+<p>RMSH does not highlight &lt;pre&gt; or &lt;pre&gt;&lt;code&gt; automatically, it needs to be called explicitly on an HTML element.
+Syntax for the highlight function is:</p>
+<pre><code>RMSH.highlight(HTMLelement, lang, bFold, bLineNumbers);</code></pre>
+<ul>
+<li><i>HTMLelement</i>: The element to highlight.</li>
+<li><i>lang</i>: Language name string corresponding to one loaded with RMSH.addSyntaxXML().</li>
+<li><i>bFold</i>: Set <i>true</i> to enable code folding. Unless code folding is needed, it should be <i>false</i>. 
+On Internet Explorer code folding is not supported, and this value is ignored.</li>
+<li><i>bLineNumbers</i>: Set <i>true</i> to display line numbers, leave out or set to false otherwise.</li>
+</ul>
+<p>If neither code folding or line numbers are needed, then they can be left out. The function call becomes:</p>
+<pre><code>RMSH.highlight(HTMLelement, lang);</code></pre>
+
+<h2>Design of RangeModeSyntaxHighlighter.js</h2>
+<p>The design of RangeModeSyntaxHighlighter.js is deliberately simple and consists of a set of functions (that return objects.) 
+It is not intended to be a library that serves as a platform for plugins and themes, it is a highlighter
+for static text. RangeModeSyntaxHighlighter.js supports IE11 and anything newer. It consists of the following parts:</p>
+<pre>RMSHXMLParser +--> RMSH +--> RMSHStyler
+                    ^
+                    |
+                    +
+                RMSHSymbolizer
+                    ^
+                    |
+                    +
+                RMSHTokenizer
+</pre>
+<p>RMSH is an immediately invoked function expression and the only part that needs to be used/called.
+XML syntax definition files are wrapped in javascript so that they can be loaded 
+with a &lt;script&gt; tag as needed. A <i>lang</i>.xml.js file is simply the language name and the XML as a string wrapped 
+in a function call:</p>
+<pre><code class="js">RMSH.addSyntaxXML("javascript", "&lt;?xml version=\"1.0\" etc...");
+</code></pre>
+<ol>
+<li>RMSH uses RMSHXMLParser to obtain style information from the XML.</li>
+<li>RMSHSymbolizer parses the text and returns matching symbols.</li>
+<li>RMSHStyler modifies the HTML: highlights the symbols and colours the ranges.</li>
+</ol>
+<h2>Unit and Integration tests</h2>
+<p>Tests to verify the functioning and performance of RMSH components. These tests can also be used when writing an XML syntax definition files.</p>
+<ul id="testULindex">
+<li>Unit tests</li>
+<li class="pad"><a href="./tests/unitTokenizer.html">Tokenizer</a></li>
+<li class="pad"><a href="./tests/unitSymbolizer.html">Symbolizer</a></li>
+<li class="pad"><a href="./tests/unitStyler.html">Styler</a></li>
+<li>Integration tests</li>
+<li class="pad"><a href="./tests/integrationSymbolizer.html">Tokenizer + Symbolizer</a></li>
+<li class="pad"><a href="./tests/integrationStyler.html">Tokenizer + Symbolizer + Styler</a></li>
+<li>Performance tests</li>
+<li class="pad"><a href="./tests/perfAll.html">RangeModeSyntaxHighlighter.js</a></li>
+</ul>
+<script>
+	var i;
+	var el=document.querySelectorAll('pre code.html');
+	for(i=0; i<el.length; i++) RMSH.highlight(el[i], 'html');
+	el=document.querySelectorAll('pre code.js');
+	for(i=0; i<el.length; i++) RMSH.highlight(el[i], 'javascript');
+</script>
+</body>
+</html>
