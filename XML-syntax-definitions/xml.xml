@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<syntaxDefinition name="xml" extensions="xml" caseSensitive="true">
+<delimiters>"'&lt;&gt;[]!?-/=</delimiters>
+<range id="defaultXML" default="true">
+	<symbols color="#0000ff">&lt; &lt;/ &gt; &lt;![CDATA[ ]]&gt; &lt;? ?&gt;</symbols>
+	<symbols color="#ee3333">&lt;!--  --&gt;</symbols>
+	
+	<embed range="tag">
+		<begin>&lt;</begin>
+		<end>&gt;</end>
+	</embed>
+	<embed range="endtag">
+		<begin>&lt;/</begin>
+		<end>&gt;</end>
+	</embed>
+	<embed range="pi">
+		<begin>&lt;?</begin>
+		<end>?&gt;</end>
+	</embed>
+	<embed range="cdata">
+		<begin>&lt;![CDATA[</begin>
+		<end>]]&gt;</end>
+	</embed>
+	<embed range="comment">
+		<begin>&lt;!--</begin>
+		<end>--&gt;</end>
+	</embed>
+</range>
+
+<range id="tag" color="#0000ff">
+	<symbols color="#ee3333">" '</symbols>
+	<symbols color="#000000">=</symbols>
+	<embed range="quoteDouble">
+		<begin>"</begin>
+		<end>"</end>
+	</embed>
+	<embed range="quoteSingle">
+		<begin>'</begin>
+		<end>'</end>
+	</embed>
+</range>
+
+<range id="quoteDouble" color="#ee3333" />	
+<range id="quoteSingle" color="#ee3333" />
+<range id="comment" color="#00bb00">
+	<!-- double hyphen is not allowed in comments, mark as bold and red -->
+	<symbols color="#ee3333" bold="true">--</symbols>
+</range>
+<range id="cdata" />
+<range id="pi" color="#0000ff">
+	<symbols color="#ee3333">" '</symbols>
+	<symbols color="#000000">=</symbols>
+	<embed range="quoteDouble">
+		<begin>"</begin>
+		<end>"</end>
+	</embed>
+	<embed range="quoteSingle">
+		<begin>'</begin>
+		<end>'</end>
+	</embed>
+</range>
+<range id="endtag" color="#0000ff" />
+</syntaxDefinition>
