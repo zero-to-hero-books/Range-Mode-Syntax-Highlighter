@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance tests</title>
+<link rel="stylesheet" href="../rmsh.css">
+<script src="../RangeModeSyntaxHighlighter-min.js"></script>
+<script src="../javascript.xml.js"></script>
+<script src="./testShared.js"></script>
+<style>
+pre#testcode code{border:0; padding:0;}
+pre#testcode{display:table; border:1px solid #ccc; border-radius:3px; padding: 0.5em;}
+</style>
+</head>
+<body>
+<h1><a href="../index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<ul id="testUL"></ul>
+
+<div style="margin-left: 20em;">
+	<h2>Performance tests</h2>
+	<div>
+   <form name="radioForm" id="radioForm">
+		<label><input type="radio" name="radioTest" value="tokenizer" checked><span class="btn">Tokenizer</span></label>
+		<label><input type="radio" name="radioTest" value="symbolizer" ><span class="btn">Tokenizer + Symbolizer</span></label>
+		<label><input type="radio" name="radioTest" value="xmlparser" ><span class="btn">XML parser</span></label>
+		<label><input type="radio" name="radioTest" value="highlight"><span class="btn">Highlight</span></label>
+		<label><input type="radio" name="radioTest" value="line"><span class="btn">Highlight + line numbers</span></label>
+		<label><input type="radio" name="radioTest" value="fold"><span class="btn">Highlight + line numbers + folding</span></label>
+	</form>
+	</div>
+<div id="output" style="border:1px solid red; border-radius:3px; padding:0.5em; display:table;"></div>
+<button type="button" onclick="run()" class="btn">Run performance test</button>
+<pre id="testcode"><code>function RMSHSymbolizer(tokenizer, symbols, caseSensitive){
+  var matchNewLine=false;
+  var lineCnt=1;
+  var whitespace=" \t\r\n";
+  if(symbols.indexOf(" \n ")&gt;-1) matchNewLine=true;
+  
+  return {
+        setSymbols: setSymbols,
+        getNextSymbol: getNextSymbol,
+        getProcessedCharCnt: getProcessedCharCnt,
+        currentLine: currentLine
+  };
+  
+  function currentLine(){
+    return lineCnt;
+  }
+  
+  function getProcessedCharCnt(){
+    return tokenizer.popedCharsCnt();
+  }
+
+  function setSymbols(newSymbols){
+    symbols=newSymbols;
+    if(symbols.indexOf(" \n ")&gt;-1) matchNewLine=true;
+  }
+    
+  function getNextSymbol(){
+    var searchStartIndex=0;
+    var concatTokens=" "; //needs to start with a space
+    var lookAheadCnt=1;
+    var lastMatchTokenCnt=0;
+    var nextToken=tokenizer.lookAhead(lookAheadCnt);
+
+    while(nextToken!=null){
+      if(!caseSensitive) concatTokens+=nextToken.toUpperCase();
+      else concatTokens+=nextToken;
+      
+      if(whitespace.indexOf(nextToken)&gt;-1){
+        if(lastMatchTokenCnt&gt;0)  break;
+        else{
+          while(lookAheadCnt&gt;0){
+            tokenizer.popToken();
+            lookAheadCnt--;
+          }
+          concatTokens=" "; //needs to start with a space
+          searchStartIndex=0;
+          // \n is handled seperately, because we count lines and it could be a range end
+          if(nextToken=="\n"){
+            lineCnt+=1;
+            if(matchNewLine) return {symbol:  nextToken , offset: tokenizer.popedCharsCnt()-1 };
+          }
+        }
+      }
+      else{
+        searchStartIndex=symbols.indexOf(concatTokens, searchStartIndex);
+        if(searchStartIndex &gt; -1){
+          if(symbols.indexOf(concatTokens+" ", searchStartIndex) &gt; -1)
+            lastMatchTokenCnt=lookAheadCnt;
+        }
+        else if(lastMatchTokenCnt&gt;0) break;
+        else{
+          tokenizer.popToken();
+          concatTokens=" "; //needs to start with a space
+          lookAheadCnt=0;
+          searchStartIndex=0;
+        }
+      }
+
+      lookAheadCnt++;
+      nextToken=tokenizer.lookAhead(lookAheadCnt);
+  
+    }
+    //we have an exact match or end of tokenizer stream
+    if(lastMatchTokenCnt&gt;0){
+      var matchedSymbol='';
+      var offset=tokenizer.popedCharsCnt();
+      while(lastMatchTokenCnt&gt;0){
+        matchedSymbol+=tokenizer.popToken();
+        lastMatchTokenCnt--;
+      }
+      return {symbol:  matchedSymbol , offset: offset};
+      
+    }
+    else return null;
+  }
+}//end of RMSHSymbolizer
+ 
+function RMSHTokenizer(strToTokenize, delimiters){  
+  var TokenFIFOQueue;
+  var popFromIndex=0;
+  var peekFromIndex=0;
+  var delim;
+  setDelimiters(delimiters);
+
+  return {
+        popToken: popToken,
+        lookAhead: lookAhead,
+        popedCharsCnt: popedCharsCnt,
+        setDelimiters: setDelimiters
+    };
+  
+  function setDelimiters(newDelimiters){
+    peekFromIndex=popFromIndex;
+    TokenFIFOQueue=[];
+    delim=newDelimiters + " \t\n\r";
+  }
+  
+  function popedCharsCnt(){
+    return popFromIndex;
+  }
+  
+  //returns the next token or null if we have reached the end of the string
+  function popToken(){
+    var nextToken=null;
+    if(TokenFIFOQueue.length&gt;0) nextToken=TokenFIFOQueue.shift();
+    else nextToken=getNextToken(popFromIndex);
+    
+    if(nextToken!=null){
+      popFromIndex+=nextToken.length;
+      if(peekFromIndex&lt;popFromIndex) peekFromIndex=popFromIndex;
+    }
+    
+    return nextToken;
+  }
+  
+  //returns null if we have reached the end of the string
+  function lookAhead(cnt){
+    if(cnt&lt;=TokenFIFOQueue.length) return TokenFIFOQueue[cnt-1];
+    
+    while(cnt&gt;TokenFIFOQueue.length ){
+      var nextToken=null;
+      nextToken=getNextToken(peekFromIndex);
+      if(nextToken!=null){
+        peekFromIndex+=nextToken.length;
+        TokenFIFOQueue.push(nextToken);
+      }
+      else return null;    
+    }
+    
+    return TokenFIFOQueue[cnt-1];
+  }
+  
+  function getNextToken(startFromIndex){
+    var offset=startFromIndex;
+    if(startFromIndex &gt;= strToTokenize.length) return null;
+    
+    while(startFromIndex &lt; strToTokenize.length){
+      var nextChar = strToTokenize.charAt(startFromIndex);
+      if(delim.indexOf(nextChar)&gt;-1){
+        if(offset==startFromIndex) return nextChar;
+        else break;
+      }
+      startFromIndex++;
+    }
+    return strToTokenize.substring(offset, startFromIndex);
+  }
+} //end of RMSHTokenizer</code></pre>
+</div>
+
+
+<script>
+addContents(8);
+var test;
+var codeText=document.querySelector('#testcode code').textContent;
+var btns=Array.prototype.slice.call(radioForm.elements.radioTest);
+btns.forEach(function(element){
+	element.addEventListener('change', radioChange);
+	if(element.checked==true) radioChange.call(element);
+});
+
+function radioChange() {
+	switch(this.value){
+		case 'highlight': test=highlightTest;
+			break;
+		case 'line': test=highlightLineTest;
+			break;
+		case 'fold': test=highlightLineFoldTest;
+			break;
+		case 'tokenizer': test=tokenizerTest;
+			break;
+		case 'symbolizer': test=symbolizerTest;
+			break;
+		case 'xmlparser': test=xmlparserTest;
+			break;
+		
+	}
+}
+
+function highlightLineTest(){
+	var t0=performance.now();
+	RMSH.highlight(document.querySelector('#testcode code'), 'javascript', false, true);
+	var t1=performance.now();
+	return (t1-t0) + "ms";
+}
+function highlightLineFoldTest(){
+	var msg="";
+	if(window.navigator.userAgent.indexOf("Trident/")>-1) msg=" (Folding not supported on Internet Explorer.)"
+	var t0=performance.now();
+	RMSH.highlight(document.querySelector('#testcode code'), 'javascript', true, true);
+	var t1=performance.now();
+	return (t1-t0) + "ms"+ msg;
+}
+function highlightTest(){
+	var t0=performance.now();
+	RMSH.highlight(document.querySelector('#testcode code'), 'javascript', false, false);
+	var t1=performance.now();
+	return (t1-t0) + "ms";
+}
+function tokenizerTest(){
+	if(!RMSH.syntaxDef['javascript'].hasOwnProperty('jsObj')) 
+		RMSH.syntaxDef['javascript'].jsObj=RMSHXMLParser(RMSH.syntaxDef['javascript'].xml);
+	var syntax=RMSH.syntaxDef['javascript'].jsObj;
+	var tokenizer=RMSHTokenizer(id('testcode').textContent, syntax.delimiters);
+	var tokenCnt=0;
+	var t0=performance.now();
+	while(tokenizer.popToken()) tokenCnt++;
+	var t1=performance.now();
+	return ((t1-t0) + "ms (Tokens: " + tokenCnt + "; Characters: "+tokenizer.popedCharsCnt()+")");
+}
+
+function symbolizerTest(){
+	if(!RMSH.syntaxDef['javascript'].hasOwnProperty('jsObj')) 
+		RMSH.syntaxDef['javascript'].jsObj=RMSHXMLParser(RMSH.syntaxDef['javascript'].xml);
+	var syntax=RMSH.syntaxDef['javascript'].jsObj;
+	var tokenizer=RMSHTokenizer(id('testcode').textContent, syntax.delimiters);
+	var symbolizer=RMSHSymbolizer(tokenizer, syntax.ranges[syntax.defaultRange].symbols, syntax.caseSensitive); 
+	var symbolCnt=0;
+	var t0=performance.now();
+	while(symbolizer.getNextSymbol()) symbolCnt++;
+	var t1=performance.now();
+	return ((t1-t0) + "ms (Symbols: " + symbolCnt + "; Lines: "+symbolizer.currentLine()+")");
+}
+function xmlparserTest(){
+	
+	var t0=performance.now();
+	var syntax=RMSHXMLParser(RMSH.syntaxDef['javascript'].xml);
+	var t1=performance.now();
+	return ((t1-t0) + "ms ('javascript' XML syntax definition file: "+ Object.keys(syntax.ranges).length+" ranges.)");
+}
+function run(){
+	var el=document.querySelector('#testcode .RMSHgutterFold');
+	if(el) id('testcode').removeChild(el);
+	el=document.querySelector('#testcode .RMSHgutterLine');
+	if(el) id('testcode').removeChild(el);
+	id('testcode').style.cssText = null;
+	document.querySelector('#testcode code').textContent=codeText;
+	id('output').textContent="Elapsed time: " + test();
+}
+</script>
+</body>
+</html>

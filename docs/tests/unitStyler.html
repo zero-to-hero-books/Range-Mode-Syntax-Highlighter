@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit test - Styler</title>
+<link rel="stylesheet" href="../rmsh.css">
+<script src="../RangeModeSyntaxHighlighter-min.js"></script>
+<script src="./testShared.js"></script>
+</head>
+<body>
+<h1><a href="../index.html">&lsaquo; Range Mode Syntax Highlighter (RMSH)</a></h1>
+<ul id="testUL"></ul>
+
+<div class="testFlexbox">
+  <div class="felxtest">
+    <h2>Styler unit tests</h2>
+    <form name="radioForm" id="radioForm">
+		<label><input type="radio" name="radioTest" value="edit" checked><span class="btn">Edit test</span></label>
+		<label><input type="radio" name="radioTest" value="mark" ><span class="btn">Mark text</span></label>
+		<label><input type="radio" name="radioTest" value="line" ><span class="btn">Line numbers</span></label>
+		<label><input type="radio" name="radioTest" value="fold" ><span class="btn">Folding</span></label>
+		<label><input type="radio" name="radioTest" value="lineandfold" ><span class="btn">Line numbers + Folding</span></label>
+	</form>
+
+    <form id="testForm">
+	<label>Line numbers: <input type="checkbox" class="arg" data-arg="2"></label>
+	<br><label>String to style: <textarea class="arg" data-arg="1"></textarea></label>
+	<br><label>Test code: <textarea id="code"></textarea>
+	'Styler' is automatically created. Folding is not supported on Internet Explorer.
+	</label>
+	</form>
+	<button type="button" onclick="Test.run()" class="btn">Run test code</button>
+  </div>
+  <div class="splitter"></div>        
+  <div class="flexoutput">
+	<h2>Output</h2><div id="output"></div>
+  </div>
+  
+</div>
+<script>
+addContents(3);
+var btns=Array.prototype.slice.call(radioForm.elements.radioTest);
+btns.forEach(function(element){
+	element.addEventListener('change', radioChange);
+	if(element.checked==true) radioChange.call(element);
+});
+
+function radioChange() {
+	switch(this.value){
+		case 'mark': Test.load([jsStr, false],
+				"var blue={color:'#0000ff', bold: true};\n"+
+				"var green={color:'#00bb00', italic: true};\n"+
+				"Styler.applyStyle(0,8, blue);\n"+
+				"Styler.applyStyle(20,9, green);\n"+
+				"Styler.applyStyle(30,11, blue);\n"+
+				"Styler.applyStyle(44,70, green); //style past end of code\n"+
+				"Styler.updateView(4);");
+			break;
+		case 'line': Test.load([jsStr, true], "Styler.updateView(4);");
+			break;
+		case 'fold': Test.load([jsStr, false], 
+				"Styler.foldOpen('fold1',18, 1);\n"+
+				"Styler.foldClose('fold1',43, 4);\n"+
+				"Styler.updateView(4);");
+			break;
+		case 'lineandfold': Test.load([jsStr, true],
+				"Styler.foldOpen('fold1',18, 1);\n"+
+				"Styler.foldClose('fold1',43, 4);\n"+
+				"Styler.updateView(4);");
+			break;
+		case 'edit': Test.edit();
+			break;
+	}
+}
+function createObj(args){
+	var el=id('output');
+	el.innerHTML="";
+	var preEl=document.createElement('pre');
+	preEl.textContent=args[0];
+	preEl.style.cssText="padding:0.5em;";
+	el.appendChild(preEl);
+	window.Styler=RMSHStyler(preEl, args[1]);
+}
+</script>
+</body>
+</html>
