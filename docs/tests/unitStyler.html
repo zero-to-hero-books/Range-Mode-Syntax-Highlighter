@@ -17,15 +17,15 @@
     <h2>Styler unit tests</h2>
     <form name="radioForm" id="radioForm">
 		<label><input type="radio" name="radioTest" value="edit" checked><span class="btn">Edit test</span></label>
-		<label><input type="radio" name="radioTest" value="mark" ><span class="btn">Mark text</span></label>
+		<label><input type="radio" name="radioTest" value="mark" ><span class="btn">Highlight</span></label>
 		<label><input type="radio" name="radioTest" value="line" ><span class="btn">Line numbers</span></label>
 		<label><input type="radio" name="radioTest" value="fold" ><span class="btn">Folding</span></label>
 		<label><input type="radio" name="radioTest" value="lineandfold" ><span class="btn">Line numbers + Folding</span></label>
+		<label><input type="radio" name="radioTest" value="all" ><span class="btn">Highlight + Folding</span></label>
 	</form>
 
     <form id="testForm">
-	<label>Line numbers: <input type="checkbox" class="arg" data-arg="2"></label>
-	<br><label>String to style: <textarea class="arg" data-arg="1"></textarea></label>
+	<label>Line numbers: <input type="checkbox" class="arg" data-arg="1"></label>
 	<br><label>Test code: <textarea id="code"></textarea>
 	'Styler' is automatically created. Folding is not supported on Internet Explorer.
 	</label>
@@ -35,11 +35,19 @@
   <div class="splitter"></div>        
   <div class="flexoutput">
 	<h2>Output</h2><div id="output"></div>
+<pre><code id="testCode">function retnull(){
+/*multiline
+comment
+  */
+return null;
+}//unterminated
+</code></pre>
   </div>
   
 </div>
 <script>
 addContents(3);
+var jsCode=id('testCode').textContent;
 var btns=Array.prototype.slice.call(radioForm.elements.radioTest);
 btns.forEach(function(element){
 	element.addEventListener('change', radioChange);
@@ -47,40 +55,68 @@ btns.forEach(function(element){
 });
 
 function radioChange() {
+	
 	switch(this.value){
-		case 'mark': Test.load([jsStr, false],
+		case 'mark': Test.load([false],
 				"var blue={color:'#0000ff', bold: true};\n"+
 				"var green={color:'#00bb00', italic: true};\n"+
 				"Styler.applyStyle(0,8, blue);\n"+
-				"Styler.applyStyle(20,9, green);\n"+
-				"Styler.applyStyle(30,11, blue);\n"+
-				"Styler.applyStyle(44,70, green); //style past end of code\n"+
-				"Styler.updateView(4);");
+				"Styler.applyStyle(20,24, green);\n"+
+				"Styler.applyStyle(45,11, blue);\n"+
+				"Styler.applyStyle(59,80, green); //style past end of code\n"+
+				"Styler.updateView(6);");
 			break;
-		case 'line': Test.load([jsStr, true], "Styler.updateView(4);");
+		case 'line': Test.load([true], 
+				"var blue={color:'#0000ff', bold: true};\n"+
+				"var green={color:'#00bb00', italic: true};\n"+
+				"Styler.applyStyle(0,8, blue);\n"+
+				"Styler.applyStyle(20,24, green);\n"+
+				"Styler.applyStyle(45,11, blue);\n"+
+				"Styler.applyStyle(59,80, green); //style past end of code\n"+
+				"Styler.updateView(6);");
 			break;
-		case 'fold': Test.load([jsStr, false], 
-				"Styler.foldOpen('fold1',18, 1);\n"+
-				"Styler.foldClose('fold1',43, 4);\n"+
-				"Styler.updateView(4);");
+		case 'fold': Test.load([ false], 
+				"Styler.foldOpen('fold1',19, 1);\n"+
+				"Styler.foldOpen('fold2',22, 2);\n"+
+				"Styler.foldClose('fold2',42, 4);\n"+
+				"Styler.foldClose('fold1',58, 6);\n"+
+				"Styler.updateView(6);");
 			break;
-		case 'lineandfold': Test.load([jsStr, true],
-				"Styler.foldOpen('fold1',18, 1);\n"+
-				"Styler.foldClose('fold1',43, 4);\n"+
-				"Styler.updateView(4);");
+		case 'lineandfold': Test.load([true],
+				"Styler.foldOpen('fold1',19, 1);\n"+
+				"Styler.foldOpen('fold2',22, 2);\n"+
+				"Styler.foldClose('fold2',42, 4);\n"+
+				"Styler.foldClose('fold1',58, 6);\n"+
+				"Styler.updateView(6);");
+			break;
+		case 'all': Test.load([true], 
+				"var blue={color:'#0000ff', bold: true};\n"+
+				"var green={color:'#00bb00', italic: true};\n"+
+				"Styler.applyStyle(0,8, blue);\n"+
+				"Styler.applyStyle(20,24, green);\n"+
+				"Styler.applyStyle(45,11, blue);\n"+
+				"Styler.applyStyle(59,80, green); //style past end of code\n\n"+
+				"Styler.foldOpen('fold1',19, 1);\n"+
+				"Styler.foldOpen('fold2',22, 2);\n"+
+				"Styler.foldClose('fold2',42, 4);\n"+
+				"Styler.foldClose('fold1',58, 6);\n"+
+				"Styler.updateView(6);");
 			break;
 		case 'edit': Test.edit();
 			break;
 	}
 }
 function createObj(args){
-	var el=id('output');
-	el.innerHTML="";
-	var preEl=document.createElement('pre');
-	preEl.textContent=args[0];
-	preEl.style.cssText="padding:0.5em;";
-	el.appendChild(preEl);
-	window.Styler=RMSHStyler(preEl, args[1]);
+	var el=document.querySelector('.RMSHgutterFold');
+	if(el) el.parentElement.removeChild(el);
+	el=document.querySelector('.RMSHgutterLine');
+	if(el) el.parentElement.removeChild(el);
+	
+	el=id('testCode');
+	el.textContent=jsCode;
+	el.style.cssText = null;
+	
+	window.Styler=RMSHStyler(el, args[0]);
 }
 </script>
 </body>
